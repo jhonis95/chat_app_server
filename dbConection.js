@@ -5,7 +5,7 @@ const connection = mysql.createConnection({
     port: '3306',
     user: db_user,
     password: db_password,
-    database: 'cadastro',
+    database: 'chat_app',
     multipleStatements: true
 })
 

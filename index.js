@@ -1,10 +1,12 @@
 const express = require('express');
 const cors = require('cors')
+const dbcon=require('./dbConection')
 // const session = require("express-session");
 // const cookieParser = require("cookie-parser");
 const PORT = 4000;
 // const http = require('http'); 
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
+const query = require('express/lib/middleware/query');
 
 // var jsonParser = bodyParser.json();
 const app = express();
@@ -34,12 +36,46 @@ app.listen(PORT,()=>{
 })
 app.post("/login",(req,res)=>{
     const { user, password } = req.body;
-    console.log(req.body)
-    res.json({
-        "msg":`This is CORS-enabled for all origins!`,
-        "body":[
-            `${user}`,
-            `${password}`
-        ]
+    dbcon.connect(function(err) {
+      if (err) throw err;
+      console.log("Connected with DB!");
+    });
+    const query=`SELECT username FROM users WHERE username = ? and password= ?`;
+    dbcon.query(query,[user,password],(err,result)=>{
+      if(err){
+        res.json({"error":`${err}`})
+      }
+      if(result.length>0){
+        res.send(result)
+      }else{
+        res.json({"msg":"no user found"})
+      }
     })
+})
+app.post("/singup",(req,res)=>{
+  const {userToResister,passwordToResister}=req.body
+  dbcon.connect(function(err) {
+    if (err) throw err;
+    console.log("Connected with DB!");
+  });
+  const query="INSERT INTO users (username,password) VALUES( ?,?)"
+  dbcon.query(query,[userToResister,passwordToResister],(err,result)=>{
+    if(err){
+      res.json({
+        "error":`${err}`,
+        "sucess":false,
+        "msg":"password already exist"
+      })
+    }
+    res.send({
+      "msg":"user created with sucess",
+      "sucess":true,
+      "result":result
+    })
+    // if(result.length>0){
+    //   res.send(result)
+    // }else{
+    //   res.json({"msg":"user already exists"})
+    // }
+  })
 })
