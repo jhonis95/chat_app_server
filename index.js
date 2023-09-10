@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors')
 const dbcon=require('./dbConection')
-// const session = require("express-session");
-// const cookieParser = require("cookie-parser");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const PORT = 4000;
 // const http = require('http'); 
 const bodyParser = require('body-parser');
@@ -12,6 +12,13 @@ const query = require('express/lib/middleware/query');
 const app = express();
 // app.use(express.json())
 // app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(session({
+  secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: true, maxAge:300000 }
+}))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors({exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']}))
@@ -46,9 +53,21 @@ app.post("/login",(req,res)=>{
         res.json({"error":`${err}`})
       }
       if(result.length>0){
-        res.send(result)
+        console.log(req.session)
+        session.userid=user;
+        console.log(req.session)
+        res.send({
+          result:result,
+          authSucess:true
+        })
       }else{
-        res.json({"msg":"no user found"})
+        res.json(
+          {
+            "msg":"no user found",
+            "error":`${err}`,
+            "authSucess":false
+          }
+        )
       }
     })
 })
@@ -63,13 +82,13 @@ app.post("/singup",(req,res)=>{
     if(err){
       res.json({
         "error":`${err}`,
-        "sucess":false,
+        "authSucess":false,
         "msg":"password already exist"
       })
     }
     res.send({
       "msg":"user created with sucess",
-      "sucess":true,
+      "authSucess":true,
       "result":result
     })
     // if(result.length>0){
@@ -79,3 +98,7 @@ app.post("/singup",(req,res)=>{
     // }
   })
 })
+app.get('/logout',(req,res) => {
+  req.session.destroy();
+  res.redirect('/');
+});
