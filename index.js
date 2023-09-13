@@ -53,8 +53,8 @@ app.post("/login",(req,res)=>{
         res.json({"error":`${err}`})
       }
       if(result.length>0){
-        console.log(req.session)
-        session.userid=user;
+        req.session.user=user;
+        req.session.save();
         console.log(req.session)
         res.send({
           result:result,
