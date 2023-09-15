@@ -14,30 +14,24 @@ const app = express();
 // app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
+  key: "userId",
   secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true, maxAge:300000 }
+  saveUninitialized: false,
+  cookie: { secure: true, maxAge:300000, httpOnly:false }
 }))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors({exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']}))
+app.use(cors({
+  origin:'http://localhost:5173',
+  credentials:true
+}))
 app.use(function(req, res, next) {
   if (req.headers['content-type'] === 'application/json;') {
     req.headers['content-type'] = 'application/json';
   }
   next();
 });
-let allowCrossDomain = function(req, res, next) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept"
-    );
-  next();
-}
-app.use(allowCrossDomain);
-
 app.listen(PORT,()=>{
     console.log("server activated")
 })
@@ -55,10 +49,10 @@ app.post("/login",(req,res)=>{
       if(result.length>0){
         req.session.user=user;
         req.session.save();
-        console.log(req.session)
         res.send({
           result:result,
-          authSucess:true
+          authSucess:true,
+          sessionID:req.sessionID
         })
       }else{
         res.json(
@@ -97,6 +91,28 @@ app.post("/singup",(req,res)=>{
     //   res.json({"msg":"user already exists"})
     // }
   })
+})
+app.post('/',(req,res)=>{
+  console.log(req.sessionStore)
+  const session=req.sessionStore.sessions
+  for(const sessionID in session){
+    if(sessionID==req.body.sessionID){
+      const data =req.sessionStore.sessions[sessionID]
+      res.send({
+        "userData":data,
+        "msg":"sending user data",
+      })
+    }
+  }
+  // session.map((sessionID)=>{
+  //   if(sessionID==req.body.sessionID){
+  //     console.log('get in data')
+  //     res.send({
+  //       "userName":sessionID.user,
+  //       "msg":"sending user data",
+  //     })
+  //   }
+  // })
 })
 app.get('/logout',(req,res) => {
   req.session.destroy();
